@@ -1,5 +1,5 @@
-**Workshop: Factor Analysis in R.** 
+**Workshop: Factor Analysis in R** 
 
-Gagan Atreya.
+Gagan Atreya
 
-February 1, 2024. 
+February 1, 2024
