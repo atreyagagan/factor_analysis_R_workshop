@@ -1,8 +1,7 @@
 
 ## Ignore all directories after **/
-# **/invoices
+# **/
 
 
 ## Ignore all files with extension after *.
-# *.exe
-
+# *.
