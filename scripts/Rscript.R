@@ -1,0 +1,1167 @@
+
+## Clear R environment:
+rm(list=ls())
+
+## Set digit options:
+options(digits = 2)
+
+
+## Set the working directory
+## Use the project directory (downloaded from GitHub) as the working directory:
+## [This is going to be different depending on your system]:
+setwd("~/Desktop/factor_analysis_R_workshop/")
+
+## Install/load R libraries using the "pacman" R package:
+## This is easier than library(package1), library(package2), etc..
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, lavaan, vtable, 
+               psych, scales, corrplot, 
+               ggthemes, ggcharts, patchwork)
+
+## Import the dataset that we will be using for the workshop:
+ds <- read_csv("data/fa_dataset.csv", show_col_types = F)
+
+## Demographic Variables: 
+## gender:
+ds$gender <- ifelse(ds$gender == "Male", "Male",
+             ifelse(ds$gender == "Female", "Female", NA))
+
+## ses:
+ds$ses <- ifelse(ds$ses == "", NA, ds$ses)
+
+## jobnature:
+ds$jobnature <- ifelse(ds$jobnature == "", NA, ds$jobnature)
+
+#sentence case for jobnature:
+ds$jobnature <- gsub("(\\D)(\\D+)", "\\U\\1\\L\\2", ds$jobnature, perl = TRUE)
+
+ds$jobnature <- ifelse(ds$jobnature == "Non-government/self-employed", 
+                       "Non-government", ds$jobnature)
+
+## Religion:
+ds$religion <- ifelse(ds$religion == "", NA, ds$religion)
+
+ds$religion <- ifelse(ds$religion == "Christian (Catholic)", "Christian: Catholic", 
+               ifelse(ds$religion == "Christian (Protestant)", "Christian: Protestant",
+               ifelse(ds$religion == "Muslim (Shia)", "Muslim: Shia",
+               ifelse(ds$religion == "Muslim (Sunni)", "Muslim: Sunni", ds$religion))))
+
+## Marital status
+
+ds$married <- ifelse(ds$married == "Not married", "Unmarried", ds$married)
+ds$married <- ifelse(ds$married == "", NA, ds$married)
+
+## Individual country datasets:
+dsgmb <- ds[ds$Country == "Gambia", ]
+dspak <- ds[ds$Country == "Pakistan", ]
+dstza <- ds[ds$Country == "Tanzania", ]
+dsuga <- ds[ds$Country == "Uganda", ]
+
+## Demographic variables in the analysis:
+# Age
+# Gender
+# Socio-economic status
+# Nature of employment
+# Religious affiliation
+# Marital status
+# Ethnicity
+
+## Variable: Sample size by Country
+tbl01 <- table(ds$Country)
+tbl01
+
+## Sample size by country:
+
+lp01 <- ds %>% 
+  lollipop_chart(x = Country,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Sample size by country")+
+  theme_bw()
+
+lp01
+
+## Variable: Age
+
+summary(ds$age)
+
+ds %>% drop_na(age)%>%
+ggplot(aes(x = age))+
+  geom_histogram(color = "black",
+                 fill = "gray",
+                 bins = 50)+
+  labs(x = "Age", 
+       y = "Frequency", 
+       title = "Age distribution (full sample)")+
+  theme_bw()
+
+ds %>% drop_na(age)%>%
+ggplot(aes(x = age))+
+  geom_histogram(color = "black",
+                 fill = "gray",
+                 bins = 50)+
+  labs(x = "Age", 
+       y = "Frequency", 
+       title = "Age distribution by country")+
+  facet_wrap(~Country, nrow = 2)+
+  theme_bw()
+
+## Gender distribution by country
+
+lp02 <- ds %>% 
+  drop_na(gender, age) %>%
+lollipop_chart(x = gender,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Gender distribution (full sample)")+
+  theme_bw()
+
+lp02
+
+## Age and gender by country:
+
+bp01 <- ds %>% drop_na(gender, age) %>% 
+  ggplot(aes(y = age, 
+             x = gender))+
+geom_boxplot(fill = "grey")+
+  labs(y = "Age",
+       x = "",
+       title = "Age and gender distribution by country")+
+  facet_wrap(~Country, nrow = 2)+
+  coord_flip()+
+  theme_bw()
+
+bp01
+
+## Variable: Socio-economic status
+
+ds %>% drop_na(ses) %>%
+lollipop_chart(x = ses,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Socioeconomic status (full sample)")+
+  theme_bw()
+
+
+sesgmb <- dsgmb %>% drop_na(ses) %>%
+lollipop_chart(x = ses,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Gambia")+
+  theme_bw()
+
+
+sespak <- dspak %>% drop_na(ses) %>%
+lollipop_chart(x = ses,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Pakistan")+
+  theme_bw()
+
+
+sestza <- dstza %>% drop_na(ses) %>%
+lollipop_chart(x = ses,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Tanzania")+
+  theme_bw()
+
+sesuga <- dsuga %>% drop_na(ses) %>%
+lollipop_chart(x = ses,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Uganda")+
+  theme_bw()
+
+## All four plots together:
+sesplot <- (sesgmb | sespak) / (sestza | sesuga) 
+sesplot + plot_annotation("Socio-economic status by country")
+
+## Variable: Marital status
+
+ds %>% drop_na(married) %>%
+lollipop_chart(x = married,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Marital status (full sample)")+
+  theme_bw()
+
+maritalgmb <- dsgmb %>% drop_na(married) %>%
+lollipop_chart(x = married,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Gambia")+
+  theme_bw()
+
+
+maritalpak <- dspak %>% drop_na(married) %>%
+lollipop_chart(x = married,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Pakistan")+
+  theme_bw()
+
+
+maritaltza <- dstza %>% drop_na(married) %>%
+lollipop_chart(x = married,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Tanzania")+
+  theme_bw()
+
+maritaluga <- dsuga %>% drop_na(married) %>%
+lollipop_chart(x = married,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Uganda")+
+  theme_bw()
+
+## All four plots together:
+
+maritalplot <- (maritalgmb | maritalpak) / (maritaltza | maritaluga) 
+
+maritalplot + plot_annotation("Marital status by country")
+
+```
+
+## Variable: Religious affiliation
+
+```{r, error = F, message = F, warning = F}
+
+lp05 <- ds %>% drop_na(religion) %>%
+lollipop_chart(x = religion,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Religious distribution (full sample)")+
+  theme_bw()
+
+lp05
+
+
+religiongmb <- dsgmb %>% drop_na(religion) %>%
+lollipop_chart(x = religion,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Gambia")+
+  theme_bw()
+
+
+religionpak <- dspak %>% drop_na(religion) %>%
+lollipop_chart(x = religion,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Pakistan")+
+  theme_bw()
+
+
+religiontza <- dstza %>% drop_na(religion) %>%
+lollipop_chart(x = religion,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Tanzania")+
+  theme_bw()
+
+religionuga <- dsuga %>% drop_na(religion) %>%
+lollipop_chart(x = religion,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Uganda")+
+  theme_bw()
+
+## All four plots together:
+
+religionplot <- (religiongmb | religionpak) / (religiontza | religionuga) 
+
+religionplot + plot_annotation("Religious affiliation by country")
+
+```
+
+## Variable: Education
+
+
+```{r, error = F, message = F, warning = F}
+
+ds$education2 <- str_to_lower(ds$education)
+ds$education3 <- str_replace_all(ds$education2, "[^[:alnum:]]", " ")
+ds$grade <- as.numeric(gsub("\\D", "", ds$education3))
+
+ds$education4 <- ifelse(grepl("non", ds$education3) == T, "No schooling",
+                 ifelse(grepl("illiterate", ds$education3) == T, "No schooling",
+                 ifelse(grepl("lleter", ds$education3) == T, "No schooling",
+                 ifelse(grepl("std vii", ds$education3) == T, "High school or less",
+                 ifelse(grepl("la saba", ds$education3) == T, "High school or less",
+                 ifelse(grepl("matriculate", ds$education3) == T, "High school or less",
+                 ifelse(grepl("wassce", ds$education3) == T, "High school or less",
+                 ifelse(ds$grade %in% c(0:12), "High school or less",
+                 ifelse(grepl("form", ds$education3) == T, "High school or less",
+                 ifelse(grepl("primary", ds$education3) == T, "High school or less",
+                 ifelse(grepl("secondary", ds$education3) == T, "High school or less", 
+                 ifelse(grepl("tertiary", ds$education3) == T, "High school or less",
+                 ifelse(grepl("middle", ds$education3) == T, "High school or less",
+                 ifelse(grepl("intermediate", ds$education3) == T, "High school or less",
+                 ifelse(grepl("high school", ds$education3) == T, "High school or less",
+                 ifelse(grepl("level", ds$education3) == T, "High school or less",
+                 ifelse(grepl("cert", ds$education3) == T, "Certificate",
+                 ifelse(grepl("diploma", ds$education3) == T, "Diploma",
+                 ifelse(grepl("achelor", ds$education3) == T, "Bachelors",
+                 ifelse(grepl("bsc", ds$education3) == T, "Bachelors",
+                 ifelse(grepl("b s c", ds$education3) == T, "Bachelors",
+                 ifelse(grepl("bssc", ds$education3) == T, "Bachelors",
+                 ifelse(grepl("underg", ds$education3) == T, "Bachelors",
+                 ifelse(grepl("college", ds$education3) == T, "Bachelors",
+                 ifelse(grepl("university", ds$education3) == T, "Bachelors",
+                 ifelse(grepl("degree", ds$education3) == T, "Bachelors",
+                 ifelse(grepl("aster", ds$education3) == T, "Masters or above",
+                 ifelse(grepl("msc", ds$education3) == T, "Masters or above",
+                 ifelse(grepl("mphil", ds$education3) == T, "Masters or above",
+                 ifelse(grepl("post graduate", ds$education3) == T, "Masters or above",
+                 ifelse(grepl("phd", ds$education3) == T, "Masters or above",
+                 "Other/unknown")))))))))))))))))))))))))))))))
+
+ds$education4 <- factor(ds$education4, levels = c("No schooling", "High school or less",
+                                   "Diploma", "Certificate", "Bachelors", 
+                                   "Masters or above", "Other/unknown"))
+
+table(ds$education4)
+
+```
+
+
+
+
+```{r, error = F, message = F, warning = F}
+
+lp05 <- ds %>% drop_na(education4) %>%
+lollipop_chart(x = education4,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Education (full sample)")+
+  theme_bw()
+
+lp05
+
+
+dsgmb <- ds[ds$country == "Gambia", ]
+dspak <- ds[ds$country == "Pakistan", ]
+dstza <- ds[ds$country == "Tanzania", ]
+dsuga <- ds[ds$country == "Uganda", ]
+
+
+education4gmb <- dsgmb %>% drop_na(education4) %>%
+lollipop_chart(x = education4,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Gambia")+
+  theme_bw()
+
+
+education4pak <- dspak %>% drop_na(education4) %>%
+lollipop_chart(x = education4,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Pakistan")+
+  theme_bw()
+
+
+education4tza <- dstza %>% drop_na(education4) %>%
+lollipop_chart(x = education4,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Tanzania")+
+  theme_bw()
+
+education4uga <- dsuga %>% drop_na(education4) %>%
+lollipop_chart(x = education4,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Uganda")+
+  theme_bw()
+
+## All four plots together:
+
+education4plot <- (education4gmb | education4pak) / (education4tza | education4uga) 
+
+education4plot + plot_annotation("Education by country")
+
+```
+
+
+## Variable: Ethnicity
+
+```{r, error = F, message = F, warning = F}
+
+## Gambia:
+eth <- as.data.frame(table(dsgmb$ethnicity))
+eth$Var1 <- as.character(eth$Var1)
+eth$ethnicity <- ifelse(eth$Freq < 2, "Other", eth$Var1)
+l1 <- as.list(eth$ethnicity)
+
+dsgmb2 <- dsgmb[, c("ethnicity")]
+
+dsgmb2$ethnicity <- ifelse(dsgmb2$ethnicity %in% l1, dsgmb2$ethnicity, "Other")
+dsgmb2$ethnicity <- ifelse(dsgmb2$ethnicity == "Serere", "Serer",
+                 ifelse(dsgmb2$ethnicity == "", NA, dsgmb2$ethnicity))
+
+ethgmb <- dsgmb2 %>% drop_na(ethnicity) %>%
+lollipop_chart(x = ethnicity,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Gambia")+
+  theme_bw()
+
+## Pakistan:
+eth <- as.data.frame(table(dspak$ethnicity))
+eth$Var1 <- as.character(eth$Var1)
+eth$ethnicity <- ifelse(eth$Freq < 7, "Other", eth$Var1)
+l1 <- as.list(eth$ethnicity)
+
+dspak2 <- dspak[, c("ethnicity")]
+
+dspak2$ethnicity <- ifelse(dspak2$ethnicity %in% l1, dspak2$ethnicity, "Other")
+dspak2$ethnicity <- ifelse(dspak2$ethnicity == "Urduspeaking", "Urdu speaking",
+                 ifelse(dspak2$ethnicity == "", NA, dspak2$ethnicity))
+
+ethpak <- dspak2 %>% drop_na(ethnicity) %>%
+lollipop_chart(x = ethnicity,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Pakistan")+
+  theme_bw()
+
+## Tanzania:
+eth <- as.data.frame(table(dstza$ethnicity))
+eth$Var1 <- as.character(eth$Var1)
+eth$ethnicity <- ifelse(eth$Freq < 7, "Other", eth$Var1)
+l1 <- as.list(eth$ethnicity)
+
+dstza2 <- dstza[, c("ethnicity")]
+
+dstza2$ethnicity <- ifelse(dstza2$ethnicity %in% l1, dstza2$ethnicity, "Other")
+dstza2$ethnicity <- ifelse(dstza2$ethnicity == "Serere", "Serer",
+                 ifelse(dstza2$ethnicity == "", NA, dstza2$ethnicity))
+
+ethtza <- dstza2 %>% drop_na(ethnicity) %>%
+lollipop_chart(x = ethnicity,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Tanzania")+
+  theme_bw()
+
+## Uganda:
+eth <- as.data.frame(table(dsuga$ethnicity))
+eth$Var1 <- as.character(eth$Var1)
+eth$ethnicity <- ifelse(eth$Freq < 7, "Other", eth$Var1)
+l1 <- as.list(eth$ethnicity)
+
+dsuga2 <- dsuga[, c("ethnicity")]
+
+dsuga2$ethnicity <- ifelse(dsuga2$ethnicity %in% l1, dsuga2$ethnicity, "Other")
+dsuga2$ethnicity <- ifelse(dsuga2$ethnicity == "japhadollah", "Japhadollah",
+                    ifelse(dsuga2$ethnicity == "Atesot", "Iteso",
+                    ifelse(dsuga2$ethnicity == "Etesot", "Iteso",
+                    ifelse(dsuga2$ethnicity == "Itesot", "Iteso",
+                    ifelse(dsuga2$ethnicity == "", NA, dsuga2$ethnicity)))))
+
+ethuga <- dsuga2 %>% drop_na(ethnicity) %>%
+lollipop_chart(x = ethnicity,
+               line_color = "black",
+               point_color = "black")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Uganda")+
+  theme_bw()
+
+## All four plots together:
+
+ethplot <- (ethgmb | ethpak) / (ethtza | ethuga) 
+
+ethplot + plot_annotation("Ethnic distribution by country")
+
+```
+
+# **Section 3. Measures of interest**
+
+Variables of interest in this analysis: 
+
+- Endorsement of Barrier Bound Leadership (BBL)
+- Endorsement of Barrier Crossing Leadership (BCL)
+
+- Imagistic items:
+  - Event: Positive affect
+  - Event: Negative affect
+  - Event: Episodic recall
+  - Event: Shared perception
+  - Event: Reflection
+  - Event: Transformative for individual
+  - Event: Transformative for group
+  
+- Ingroup fusion
+- Ingroup identification
+- Outgroup fusion
+- Outgroup identification
+- Perception of religious freedom
+- Experience of religious freedom
+**- Empathic concern [PROBLEMATIC. IGNORE IT FOR THIS PAPER]**
+- Perspective taking
+- Perceived history of discrimination
+- Frequency of positive contact with OG
+- Frequency of negative contact with OG
+- Outgroup cooperation
+- Outgroup hostility
+- Willingness to fight outgroup
+
+- Outgroup affect (made up of five sub-items)
+
+# **Section 3b: Outgroup attitudinal measures **
+
+### Perceived history of discrimination
+
+```{r, error = F, message = F, warning = F}
+
+# single item measure
+
+ogp01 <- ds %>% drop_na(history_discrimination) %>% 
+  ggplot(aes(y = history_discrimination, 
+             x = country))+
+geom_boxplot(fill = "grey")+
+  labs(y = "Perceived discrimination",
+       x = "",
+       title = "Perceived history of discrimination by country")+
+  #facet_wrap(~Country, nrow = 2)+
+  coord_flip()+
+  theme_bw()
+
+ogp01
+
+```
+
+
+### Positive contact with outgroup:
+
+```{r, error = F, message = F, warning = F}
+
+# single item measure
+
+ogp02 <- ds %>% drop_na(freq_positive_contact) %>% 
+  ggplot(aes(y = freq_positive_contact, 
+             x = country))+
+geom_boxplot(fill = "grey")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Positive contact with outgroup by country")+
+  #facet_wrap(~Country, nrow = 2)+
+  coord_flip()+
+  theme_bw()
+
+ogp02
+
+```
+
+
+### Negative contact with outgroup:
+
+```{r, error = F, message = F, warning = F}
+
+# single item measure
+
+ogp03 <- ds %>% drop_na(freq_negative_contact) %>% 
+  ggplot(aes(y = freq_negative_contact, 
+             x = country))+
+geom_boxplot(fill = "grey")+
+  labs(y = "Frequency",
+       x = "",
+       title = "Negative contact with outgroup by country")+
+  #facet_wrap(~Country, nrow = 2)+
+  coord_flip()+
+  theme_bw()
+
+ogp03
+
+```
+
+
+### Willingness to fight outgroup:
+
+```{r, error = F, message = F, warning = F}
+
+# single item measure
+
+ogp04 <- ds %>% drop_na(fight_outgroup) %>% 
+  ggplot(aes(y = fight_outgroup, 
+             x = country))+
+geom_boxplot(fill = "grey")+
+  labs(y = "Willingness",
+       x = "",
+       title = "Willingness to fight outgroup by country")+
+  #facet_wrap(~Country, nrow = 2)+
+  coord_flip()+
+  theme_bw()
+
+ogp04
+
+```
+
+
+### Outgroup hostility:
+
+```{r, error = F, message = F, warning = F}
+# 2 items make up full scale:
+# og_host_01
+# og_host_02
+
+ogp05 <- ds %>% drop_na(og_hostility) %>% 
+  ggplot(aes(y = og_hostility, 
+             x = country))+
+geom_boxplot(fill = "grey")+
+  labs(y = "Hostility",
+       x = "",
+       title = "Outgroup hostility by country")+
+  #facet_wrap(~Country, nrow = 2)+
+  coord_flip()+
+  theme_bw()
+
+ogp05
+
+```
+
+### Outgroup cooperation:
+
+```{r, error = F, message = F, warning = F}
+
+# 2 items make up full scale:
+# og_coop_01
+# og_coop_02
+
+ogp06 <- ds %>% drop_na(og_cooperation) %>% 
+  ggplot(aes(y = og_cooperation, 
+             x = country))+
+geom_boxplot(fill = "grey")+
+  labs(y = "Cooperation",
+       x = "",
+       title = "Outgroup cooperation by country")+
+  #facet_wrap(~Country, nrow = 2)+
+  coord_flip()+
+  theme_bw()
+
+ogp06
+
+```
+
+### Outgroup affect:
+
+### 5 items make up full scale:
+
+- Negative to positive
+- Hostile to friendly
+- Suspicious to trusting
+- Contempt to respect
+- Threatened to relaxed
+
+```{r, error = F, message = F, warning = F}
+
+# 5 items make up full scale:
+
+#NegativeToPositive
+#HostileToFriendly
+#SuspiciousToTrusting
+#ContemptToRespect
+#ThreatenedToRelaxed
+
+ogp07 <- ds %>% drop_na(og_affect) %>% 
+  ggplot(aes(y = og_affect, 
+             x = country))+
+geom_boxplot(fill = "grey")+
+  labs(y = "Affect",
+       x = "",
+       title = "Outgroup affect by country")+
+  #facet_wrap(~Country, nrow = 2)+
+  coord_flip()+
+  theme_bw()
+
+ogp07
+
+```
+
+# **Section 4: TO DO**
+
+- Replicate Table 2 from paper 1 for all of the above variables
+  - This is quite easy. Copy R code from one of the individual country Rpubs files
+
+- Replicate Figure 6 from Paper 1
+  - This will take a bit of work.
+ 
+- Replicate Table 3 from paper 1 (CFA for BCL and BBL)  
+  - Done. See section 5 below
+
+- Replicate Table 4 from paper 1 (CFA for imagistic items)
+  
+- Replicate Table 5 from paper 1 (Standardized Loadings from Three Factor EFA)
+
+- Replicate Table 6 from paper 1 (CFA for Fusion/Identification measures)
+  - Done. See sections 6 and 7 below
+
+- Everything else from Table 6 onwards... 
+
+# **Section 5: BCL and BBL**
+
+## EFA:
+
+```{r, error = F, message = F, warning = F}
+
+leadership <- cbind.data.frame(ds$ENDBCL01, ds$ENDBCL02, ds$ENDBCL03, 
+                               ds$ENDBBL01, ds$ENDBBL02, ds$ENDBBL03)
+
+leadership <- na.omit(leadership)
+
+scree(leadership)
+
+fit02 <- factanal(leadership, 2, rotation="promax")
+fit02
+
+```
+
+## CFA: 
+
+```{r, error = F, message = F, warning = F}
+
+## Remove 'ds$END' from variable names:
+names(leadership) <- sub(".*\\END", "", names(leadership))
+
+#correlated two factor solution, marker method
+twofacs <- 'BCL =~ BCL01+BCL02+BCL03
+            BBL =~ BBL01+BBL02+BBL03' 
+
+cfa02 <- cfa(twofacs, 
+             data=leadership, 
+             std.lv=TRUE) 
+
+summary(cfa02,
+        fit.measures=TRUE,
+        standardized=TRUE)
+
+```
+
+## Reliability and visualizaion of BCL:
+
+```{r, error = F, message=F, warning = F}
+
+BCL <- cbind.data.frame(ds$ENDBCL01, ds$ENDBCL02, ds$ENDBCL03)
+alph01 <- psych::alpha(BCL)
+alph01$total
+
+```
+
+
+```{r, error = F, message=F, warning = F}
+
+ds$BCL <- (ds$ENDBCL01+ds$ENDBCL02+ds$ENDBCL03)/3
+
+summary(ds$BCL)
+sd(ds$BCL, na.rm = T)
+
+ds %>% drop_na(BCL)%>%
+ggplot(aes(x = BCL,
+           y = country))+
+  geom_boxplot(fill = "grey")+
+ labs(x = "BCL score", 
+       y = "Frequency", 
+       title = "Endorsement of BCL by country")+
+  #facet_wrap(~Country, nrow = 2)+
+  theme_bw()
+
+```
+
+
+## Reliability and visualization of BBL:
+
+```{r, error = F, message=F, warning = F}
+
+BBL <- cbind.data.frame(ds$ENDBBL01, ds$ENDBBL02, ds$ENDBBL03)
+alph01 <- psych::alpha(BBL)
+alph01$total
+
+```
+
+
+```{r, error = F, message=F, warning = F}
+
+ds$BBL <- (ds$ENDBBL01+ds$ENDBBL02+ds$ENDBBL03)/3
+
+summary(ds$BBL)
+sd(ds$BBL, na.rm = T)
+
+ds %>% drop_na(BBL)%>%
+ggplot(aes(x = BBL,
+           y = country))+
+  geom_boxplot(fill = "grey")+
+ labs(x = "BBL score", 
+       y = "Frequency", 
+       title = "Endorsement of BBL by country")+
+  #facet_wrap(~Country, nrow = 2)+
+  theme_bw()
+
+```
+
+
+# **Section 6: Ingroup Fusion and Identification**
+
+## EFA
+
+```{r, error = F, message = F, warning = F}
+
+## IG IGbonds dataframe:
+IGbonds <- cbind.data.frame(ds$IGF01, ds$IGF02, ds$IGF03, ds$IGF04,
+                            ds$IGI02, ds$IGI03, ds$IGI04)
+
+names(IGbonds) <- sub('ds\\$', '', names(IGbonds))
+
+IGbonds <- na.omit(IGbonds)
+
+scree(IGbonds)
+
+fit02 <- factanal(IGbonds, 2, rotation="promax")
+fit02
+
+```
+
+## CFA
+
+```{r, error = F, message = F, warning = F}
+
+#correlated two factor solution, marker method
+twofacs <- 'IGFusion =~ IGF01+IGF02+IGF03+IGF04
+            IGIdentification =~ IGI02+IGI03+IGI04' 
+
+cfa02 <- cfa(twofacs, 
+             data=IGbonds, 
+             std.lv=TRUE) 
+
+summary(cfa02,
+        fit.measures=TRUE,
+        standardized=TRUE)
+
+```
+
+## Reliability and visualization of IG Fusion:
+
+```{r, error = F, message=F, warning = F}
+
+IGFusion <- cbind.data.frame(ds$IGF01, ds$IGF02, ds$IGF03, ds$IGF04)
+alph01 <- psych::alpha(IGFusion)
+alph01$total
+
+ds$IGFusion <- (ds$IGF01+ds$IGF02+ds$IGF03+ds$IGF04)/4
+
+summary(ds$IGFusion)
+sd(ds$IGFusion, na.rm = T)
+
+
+ds %>% drop_na(IGFusion)%>%
+ggplot(aes(x = IGFusion,
+           y = country))+
+  geom_boxplot(fill = "grey")+
+ labs(x = "IG Fusion score", 
+       y = "Frequency", 
+       title = "IG Fusion by country")+
+  #facet_wrap(~Country, nrow = 2)+
+  theme_bw()
+
+
+```
+
+## Reliability and visualization of IG Identification:
+
+```{r, error = F, message=F, warning = F}
+
+IGIdentification <- cbind.data.frame(ds$IGI02, ds$IGI03, ds$IGI04)
+alph01 <- psych::alpha(IGIdentification)
+alph01$total
+
+ds$IGIdentification <- (ds$IGF02+ds$IGF03+ds$IGF04)/3
+
+summary(ds$IGIdentification)
+sd(ds$IGIdentification, na.rm = T)
+
+
+ds %>% drop_na(IGIdentification)%>%
+ggplot(aes(x = IGIdentification,
+           y = country))+
+  geom_boxplot(fill = "grey")+
+ labs(x = "IG Identification score", 
+       y = "Frequency", 
+       title = "IG Identification by country")+
+  #facet_wrap(~Country, nrow = 2)+
+  theme_bw()
+
+
+```
+
+
+# **Section 7: Outgroup Fusion and Identification**
+
+## EFA
+
+```{r, error = F, message = F, warning = F}
+
+## OG OGbonds dataframe:
+OGbonds <- cbind.data.frame(ds$OGF01, ds$OGF02, ds$OGF03, ds$OGF04,
+                            ds$OGI02, ds$OGI03, ds$OGI04)
+
+names(OGbonds) <- sub('ds\\$', '', names(OGbonds))
+
+OGbonds <- na.omit(OGbonds)
+
+scree(OGbonds)
+
+fit02 <- factanal(OGbonds, 2, rotation="promax")
+fit02
+
+```
+
+## CFA
+
+```{r, error = F, message = F, warning = F}
+
+#correlated two factor solution, marker method
+twofacs <- 'OGFusion =~ OGF01+OGF02+OGF03+OGF04
+            OGIdentification =~ OGI02+OGI03+OGI04' 
+
+cfa02 <- cfa(twofacs, 
+             data=OGbonds, 
+             std.lv=TRUE) 
+
+summary(cfa02,
+        fit.measures=TRUE,
+        standardized=TRUE)
+
+```
+
+
+## Reliability and visualization of OG Fusion:
+
+```{r, error = F, message=F, warning = F}
+
+OGFusion <- cbind.data.frame(ds$OGF01, ds$OGF02, ds$OGF03, ds$OGF04)
+alph01 <- psych::alpha(OGFusion)
+alph01$total
+
+ds$OGFusion <- (ds$OGF01+ds$OGF02+ds$OGF03+ds$OGF04)/4
+
+summary(ds$OGFusion)
+sd(ds$OGFusion, na.rm = T)
+
+ds %>% drop_na(OGFusion)%>%
+ggplot(aes(x = OGFusion,
+           y = country))+
+  geom_boxplot(fill = "grey")+
+ labs(x = "OG Fusion score", 
+       y = "Frequency", 
+       title = "OG Fusion by country")+
+  #facet_wrap(~Country, nrow = 2)+
+  theme_bw()
+
+
+```
+
+## Reliability and visualization of OG Identification:
+
+```{r, error = F, message=F, warning = F}
+
+OGIdentification <- cbind.data.frame(ds$OGI02, ds$OGI03, ds$OGI04)
+alph01 <- psych::alpha(OGIdentification)
+alph01$total
+
+ds$OGIdentification <- (ds$OGF02+ds$OGF03+ds$OGF04)/3
+
+summary(ds$OGIdentification)
+sd(ds$OGIdentification, na.rm = T)
+
+ds %>% drop_na(OGIdentification)%>%
+ggplot(aes(x = OGIdentification,
+           y = country))+
+  geom_boxplot(fill = "grey")+
+ labs(x = "OG Identification score", 
+       y = "Frequency", 
+       title = "OG Identification by country")+
+  #facet_wrap(~Country, nrow = 2)+
+  theme_bw()
+
+```
+
+
+# **Section 8: Imagistic items**
+
+```{r, error = F, message = F, warning = F}
+
+imagistic <- cbind.data.frame(ds$event_episodic_recall_01, 
+                              ds$event_episodic_recall_02,
+                              ds$event_shared_perception_01, 
+                              ds$event_shared_perception_02,
+                              ds$event_reflection_01, 
+                              ds$event_reflection_02,
+                              #ds$event_transformative_indiv_01,
+                              ds$event_transformative_indiv_02,
+                              #ds$event_transformative_group_01,
+                              ds$event_transformative_group_02)
+
+names(imagistic) <- sub('ds\\$event\\_', '', names(imagistic))
+
+imagistic <- na.omit(imagistic)
+
+mtx <- cor(imagistic[, c(1:8)])
+
+mtx
+
+```
+
+
+### Correlation plot:
+
+```{r, error = F, message = F, warning = F}
+
+corrplot(mtx, method = "number", number.cex = 0.7,
+         col=c("darkred", "red", "red",
+               "darkgrey", "blue", "darkblue"))
+
+```
+
+### Scree plot:
+
+```{r, error = F, message = F, warning = F}
+
+scree(imagistic)
+
+```
+
+### Four factor model:
+
+```{r, error = F, message = F, warning = F}
+
+fit04 <- factanal(imagistic, 4, rotation="promax")
+
+print(fit04$loadings, cutoff = 0.00)
+
+fit04
+
+```
+
+
+# **Section 9: CFA: Imagistic items**
+
+```{r, error = F, message = F, warning = F}
+
+## Remove 'ds$END' from variable names:
+names(imagistic) <- sub(".*\\$", "", names(imagistic))
+
+names(imagistic)
+
+#correlated two factor solution, marker method
+fourfacs <- 'Reflection =~ reflection_01+reflection_02
+             Vivid_recall =~ episodic_recall_01+episodic_recall_02
+             Perceived shareness =~ shared_perception_01+shared_perception_02
+             Defining_experience =~ transformative_indiv_02+transformative_group_02' 
+
+cfa04 <- cfa(fourfacs, 
+             data=imagistic, 
+             std.lv=TRUE) 
+
+summary(cfa04,
+        fit.measures=TRUE,
+        standardized=TRUE)
+
+```
+
+# **Section 10: Reliability: Imagistic items**
+
+## Reliability of reflection:
+
+```{r, error = F, message=F, warning = F}
+
+reflection <- cbind.data.frame(ds$event_reflection_01, ds$event_reflection_02)
+alph01 <- psych::alpha(reflection)
+alph01$total
+
+```
+
+## Reliability of vivid recall:
+
+```{r, error = F, message=F, warning = F}
+
+recall <- cbind.data.frame(ds$event_episodic_recall_01, ds$event_episodic_recall_02)
+alph01 <- psych::alpha(recall)
+alph01$total
+
+```
+
+
+## Reliability of perceived shareness:
+
+```{r, error = F, message=F, warning = F}
+
+sharedness <- cbind.data.frame(ds$event_shared_perception_01, ds$event_shared_perception_02)
+alph01 <- psych::alpha(sharedness)
+alph01$total
+
+```
+
+
+## Reliability of defining experience:
+
+```{r, error = F, message=F, warning = F}
+
+defining_exp <- cbind.data.frame(ds$event_transformative_indiv_02, ds$event_transformative_group_02)
+alph01 <- psych::alpha(defining_exp)
+alph01$total
+
+```
+

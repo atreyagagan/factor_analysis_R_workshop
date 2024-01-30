@@ -1,1 +1,0 @@
-Miscellaneous files and directories related to this project go here. 
