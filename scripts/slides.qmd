@@ -12,6 +12,10 @@ format:
 
 ## Introduction 
 
+> - This workshop will cover the basics of Factor Analysis (both Exploratory and Confirmatory) in the R programming language
+
+> - Ideally for people with beginner/intermediate familiarity with R and/or interest in psychometrics / survey data analysis 
+
 > - About me: Data Scientist / Quantitative Social Scientist based in Los Angeles, California
 
 > - [Github](https://github.com/atreyagagan){target="blank"}
@@ -20,16 +24,12 @@ format:
 
 > - [Bluesky](https://bsky.app/profile/gaganatreya.bsky.social){target="blank"} 
 
-> - This workshop will cover the basics of Factor Analysis (both Exploratory and Confirmatory) in the R programming language
-
-> - Ideally for people with beginner/intermediate familiarity with R and/or interest in psychometrics / survey data analysis 
-
 
 ## Data and code for this workshop 
 
 - Github repo: Download all workshop contents from [here](https://github.com/atreyagagan/Factor_Analysis_R_Workshop){target="blank"}. 
 
-![](/home/gagan/Desktop/factor_analysis_workshop/plots/gh_download.png){#id .class width=30% height=30%}
+![](../plots/gh_download.png){#id .class width=30% height=30%}
 
 
 ## 
