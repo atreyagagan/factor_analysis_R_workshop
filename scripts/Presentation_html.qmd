@@ -33,19 +33,31 @@ editor:
 
 - [Email: atreyagagan@gmail.com](mailto:atreyagagan@gmail.com?){target="blank"}
 
-
 ## Data and code for this workshop 
 
 - Github repo: Download all workshop contents from [here](https://github.com/atreyagagan/Factor_Analysis_R_Workshop){target="blank"}. 
 
 ![](../plots/gh_download.png){#id .class width=60% height=60%}
 
+## Tasks today 
+
+- This will be an "applied" workshop, with very little math/theory behind Factor Analysis
+
+- Refer to the two readings (pdf files) in the github repo for through discussion 
+
+- Rather, we will use an original dataset and go through the step-by-step of conducting Exploratory Data Analysis/Visualization, followed by Exploratory Factor Analysis and Confirmatory Factor Analysis. 
+
+- Think of this as a "guide" that you can refer to later, more than a detailed discussion about the math behind FA
 
 # **Section 2. Introduction to the data / EDA **
 
-- Cross-country survey across four countries
+- Original cross-country survey conducted across four countries:
 
-- We will examine what people think about how group leaders should behave
+- Gambia, Pakistan, Tanzania, Uganda
+
+- We will examine what people think about how group leaders should behave 
+
+- We will do this by reducing survey responses to coherent constructs or "factors"
 
 ```{r, error = F, message = F, warning = F}
 
