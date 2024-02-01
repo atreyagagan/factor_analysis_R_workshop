@@ -1,10 +1,53 @@
+---
+title: "Workshop: Factor Analysis in R"
+author: Gagan Atreya
+date: "February 1, 2024"
+format:
+  html:
+    toc: true
+    toc-location: left
+    toc-depth: 4
+    theme: lumen
+    fontsize: large
+    code-fold: true
+    code-tools: true
+    code-summary: "Display code"
+    code-overflow: wrap
+editor: 
+  markdown: 
+    wrap: 72
+---
 
-## Gagan Atreya
-## Workshop: Factor Analysis in R
-## Workshops for Ukraine
-## February 1, 2024
 
-#### Section 1. Introduction to the workshop/data ####
+# **Section 1. Introduction **
+
+- This workshop will cover the basics of Factor Analysis (both Exploratory and Confirmatory) in the R programming language
+
+- Ideally for people with beginner/intermediate familiarity with R and/or interest in psychometrics / survey data analysis 
+
+- About me: Data Scientist / Quantitative Social Scientist based in Los Angeles, California
+
+- [Github](https://github.com/atreyagagan){target="blank"}
+
+- [Linkedin](https://www.linkedin.com/in/gagan-atreya-1170202a2/){target="blank"}
+
+- [Email: atreyagagan@gmail.com](mailto:atreyagagan@gmail.com?){target="blank"}
+
+
+## Data and code for this workshop 
+
+- Github repo: Download all workshop contents from [here](https://github.com/atreyagagan/Factor_Analysis_R_Workshop){target="blank"}. 
+
+![](../plots/gh_download.png){#id .class width=60% height=60%}
+
+
+# **Section 2. Introduction to the data / EDA **
+
+- Cross-country survey across four countries
+
+- We will examine what people think about how group leaders should behave
+
+```{r, error = F, message = F, warning = F}
 
 ## Clear R environment:
 rm(list=ls())
@@ -27,10 +70,24 @@ pacman::p_load(tidyverse, lavaan, vtable,
 ## Import the dataset that we will be using for the workshop:
 ds <- read_csv("data/fa_dataset.csv", show_col_types = F)
 
-#### Section 2. Exploratory Data Analysis & Visualization ####
-
 ## Briefly go over the dataset, variables, codebook, etc. 
-vtable(ds)
+# vtable(ds)
+
+```
+
+## **Demographic variables for EDA:**
+
+- Country
+- Age
+- Gender
+- Socio-economic status
+- Religious affiliation
+- Marital status
+- Education
+
+### Variable: Sample size by Country
+
+```{r}
 
 ## Variable: Sample size by Country
 tbl01 <- table(ds$country)
@@ -54,15 +111,12 @@ lp01 <- ds %>%
 
 lp01
 
-## Demographic variables for EDA:
+```
 
-# Country
-# Age
-# Gender
-# Socio-economic status
-# Religious affiliation
-# Marital status
-# Education
+
+### Variable: Age 
+
+```{r, error = F, message = F, warning = F}
 
 ## Variable: Age
 summary(ds$age)
@@ -87,6 +141,14 @@ ggplot(aes(x = age))+
        title = "Age distribution by country")+
   facet_wrap(~country, nrow = 2)+
   theme_bw()
+
+```
+
+### Variable: Gender
+
+```{r, error = F, message = F, warning = F}
+
+
 
 ## Gender distribution by country
 lp02 <- ds %>% 
@@ -115,7 +177,12 @@ geom_boxplot(fill = "grey")+
 
 bp01
 
-## Variable: Socio-economic status
+```
+
+### Variable: Socio-economic status
+
+```{r, error = F, message = F, warning = F}
+
 ds %>% drop_na(ses) %>%
 lollipop_chart(x = ses,
                line_color = "black",
@@ -166,7 +233,12 @@ lollipop_chart(x = ses,
 sesplot <- (sesgmb | sespak) / (sestza | sesuga) 
 sesplot + plot_annotation("Socio-economic status by country")
 
-## Variable: Marital status
+```
+
+### Variable: Marital status
+
+```{r, error = F, message = F, warning = F}
+
 ds %>% drop_na(married) %>%
 lollipop_chart(x = married,
                line_color = "black",
@@ -216,7 +288,12 @@ lollipop_chart(x = married,
 maritalplot <- (maritalgmb | maritalpak) / (maritaltza | maritaluga) 
 maritalplot + plot_annotation("Marital status by country")
 
-## Variable: Religious affiliation
+```
+
+### Variable: Religious affiliation
+
+```{r, error = F, message = F, warning = F}
+
 lp05 <- ds %>% drop_na(religion) %>%
 lollipop_chart(x = religion,
                line_color = "black",
@@ -268,7 +345,12 @@ lollipop_chart(x = religion,
 religionplot <- (religiongmb | religionpak) / (religiontza | religionuga) 
 religionplot + plot_annotation("Religious affiliation by country")
 
-## Variable: Education
+```
+
+### Variable: Education
+
+```{r, error = F, message = F, warning = F}
+
 table(ds$education)
 
 ds$education <- factor(ds$education, 
@@ -328,21 +410,21 @@ lollipop_chart(x = education,
 educationplot <- (educationgmb | educationpak) / (educationtza | educationuga) 
 educationplot + plot_annotation("Education by country")
 
-#### **Section 3. Substantive Measures of interest** ####
+```
 
-#### Construct 1: Group leadership #### 
+# **Section 3. Exploratory Factor Analysis** 
 
-vtable(ds)
+```{r, error = F, message = F, warning = F}
 
-# To what extent do you agree with the following statements? 
-# (1- Strongly Disagree to 7- Strongly Agree)
+### Items:
+
+### To what extent do you agree with the following statements? 
+### (1- Strongly Disagree to 7- Strongly Agree)
   
-# Good leaders should:
+### Good leaders should:
 
-## Leadership item 01:
-# Seek out opportunities to bridge social divisions with their opponents, 
-# enemies, opposition groups, or other relevant outgroups.
-summary(ds$leadership01)
+### Leadership item 01:
+### Seek out opportunities to bridge social divisions with their opponents, enemies, opposition groups, or other relevant outgroups.
 
 # Visualize with histogram using functions in R 
 # We can use the same function for subsequent items
@@ -430,18 +512,24 @@ leadership <- na.omit(leadership)
 
 ## Examine correlation matrix:
 mtx01 <- cor(leadership[, c(1:6)])
-mtx01
+
+```
 
 ## Visualize correlation matrix:
+
+```{r, error = F, message = F, warning = F}
 
 corrplot(mtx01, 
          method = "number", 
          number.cex = 0.7,
          col=c("white", "darkred", "red",
                "darkgrey", "blue", "darkblue"))
-
+```
 
 ## Kaiser-Meyer-Olkin factor adequacy test
+
+```{r, error = F, message = F, warning = F}
+
 KMO(r=cor(leadership))
 
 ## Examine if factor analysis is appropriate
@@ -449,27 +537,46 @@ KMO(r=cor(leadership))
 ## The general criteria is that overall MSO for the KMO test needs to be greater than 0.60. 
 ## Based on the results (overall MSA = 0.69), factor analysis is appropriate.
 
-## Bartlett's test of sphericity:
+```
+
+##  Bartlett's test of sphericity:
+
+```{r, error = F, message = F, warning = F}
 cortest.bartlett(leadership)
 
 ## The test is significant, again suggesting that factor analysis is appropriate.
+```
+
 
 ## Parallel test
+
+```{r, error = F, message = F, warning = F}
+
 parallel <- fa.parallel(leadership)
 
-## Based on the scree plot, factor analysis with two factors is the most appropriate. 
-## We will proceed with promax rotation, which assumes that the items are inter-correlated 
-## (that is, not independent from each other).
+```
+
+Based on the scree plot, factor analysis with two factors is the most appropriate. 
+We will proceed with promax rotation, which assumes that the items are inter-correlated 
+(that is, not independent from each other).
+
 
 ## Two factor model:
+
+```{r, error = F, message = F, warning = F}
 fit01 <- factanal(leadership, 2, rotation="promax")
 fit01
 
-# p-value > 0.05 suggests that two factors is sufficient 
-# we cannot reject the null hypothesis that two factors captures
-# "full dimensionality" in the dataset
+```
 
-#plot loadings for each factor
+p-value > 0.05 suggests that two factors is sufficient. 
+
+We cannot reject the null hypothesis that two factors captures "full dimensionality" in the dataset
+
+## Plot loadings for each factor
+
+```{r, error = F, message = F, warning = F}
+
 plot(
   fit01$loadings[, 1], 
   fit01$loadings[, 2],
@@ -489,55 +596,57 @@ text(
   col = "blue"
 )
 
+```
 
-## We can observe a two factor structure 
 
-## Factor 1: leadership01, leadership02, leadership03
-## Factor 2: leadership04, leadership05, leadership06
+**We can observe a two factor structure **
 
-## Refer to codebook to see if these factors are "coherent"
+Factor 1: leadership01, leadership02, leadership03
 
-## Factor 01:
+Factor 2: leadership04, leadership05, leadership06
 
-# item 1:
-# Seek out opportunities to bridge social divisions with their opponents, 
-# enemies, opposition groups, or other relevant outgroups.
+Refer to codebook to see if these factors are "coherent"
 
-# item 2:
-# Demonstrate willingness to compromise with their opponents, enemies, 
-# opposition groups, or other relevant outgroups. 
+Factor 01:
 
-# item 3:
-# Try to understand and empathize with their opponents, enemies, 
-# opposition groups, or other relevant outgroups.  
+Item 1:
+Seek out opportunities to bridge social divisions with their opponents, enemies, opposition groups, or other relevant outgroups.
 
-## Call this factor: "Barrier Crossing Leadership"
+Item 2:
+Demonstrate willingness to compromise with their opponents, enemies, opposition groups, or other relevant outgroups. 
 
-## Factor 02:
+Item 3:
+Try to understand and empathize with their opponents, enemies, pposition groups, or other relevant outgroups.  
 
-# item 1:
-# Try to accurately represent the interests of the communities and groups 
-# that they belong to. 
+Call this factor: **"Barrier Crossing Leadership"**
 
-# item 2:
-# Seek out opportunities to build stronger connections within the 
-# communities and groups they belong to.
+Factor 02:
 
-# item 3:
-# Promote the interests of the communities and groups they belong to 
-# even at the expense of other competing groups.
+Item 1:
+Try to accurately represent the interests of the communities and groups that they belong to. 
 
-## Call this factor: "Barrier bound leadership"
+item 2:
+Seek out opportunities to build stronger connections within the communities and groups they belong to.
 
-# The promax rotated FA output suggests that there are two factors:
+item 3:
+Promote the interests of the communities and groups they belong to even at the expense of other competing groups.
 
-# Factor 1 = Barrier Crossing Leadeship (BCL)"
-# Factor 2 = Barrier Bound Leadership (BBL)"
+Call this factor: **"Barrier bound leadership"**
 
-# The two factors cumulatively explain 53% of the variance in the data. 
-# Factor 1 explains 29% of the variance, Factor 2 explains 24%
+The promax rotated FA output suggests that there are two factors:
 
-#### Confirmatory Factor Analysis #### 
+Factor 1 = Barrier Crossing Leadeship (BCL)"
+
+Factor 2 = Barrier Bound Leadership (BBL)"
+
+The two factors cumulatively explain 53% of the variance in the data. 
+
+Factor 1 explains 29% of the variance, Factor 2 explains 24%
+
+
+# **Section 4. Confirmatory Factor Analysis**
+
+```{r, error = F, message = F, warning = F}
 
 # correlated two factor solution, marker method
 names(leadership)
@@ -554,8 +663,11 @@ cfa01 <- cfa(twofacs,
 summary(cfa01,
         fit.measures = TRUE,
         standardized = TRUE)
+```
 
+# **Section 5. Reliability Analysis and Visualization**
 
+```{r, error = F, message = F, warning = F}
 
 ## Now, we can examine the "reliability" of each constructs represented by two factors:
 BCL <- cbind.data.frame(ds$leadership01, ds$leadership02, ds$leadership03)
@@ -640,3 +752,4 @@ bp05
 
 #### End of File ####
 
+```
