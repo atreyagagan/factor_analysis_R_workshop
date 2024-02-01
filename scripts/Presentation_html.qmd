@@ -41,13 +41,14 @@ editor:
 
 ## Tasks today 
 
-- This will be an "applied" workshop, with very little math/theory behind Factor Analysis
+- This will be an applied workshop, with very little math/theory behind Factor Analysis
 
-- Refer to the two readings (pdf files) in the github repo for through discussion 
+- Refer to the two readings (pdf files) in the github repo for more detailed disussions on the math behind EFA and CFA
 
-- Rather, we will use an original dataset and go through the step-by-step of conducting Exploratory Data Analysis/Visualization, followed by Exploratory Factor Analysis and Confirmatory Factor Analysis. 
+- Rather, we will use an original dataset and go through the step-by-step of conducting Exploratory Data Analysis/Visualization, followed by Exploratory Factor Analysis and Confirmatory Factor Analysis, and see how they differ practically. 
 
-- Think of this as a "guide" that you can refer to later, more than a detailed discussion about the math behind FA
+- Think of this as a guide that you can refer to later, more than a detailed discussion about the math behind FA/SEM etc. 
+
 
 # **Section 2. Introduction to the data / EDA **
 
@@ -55,7 +56,7 @@ editor:
 
 - Gambia, Pakistan, Tanzania, Uganda
 
-- We will examine what people think about how group leaders should behave 
+- We will examine what people think about how "group leaders" should behave 
 
 - We will do this by reducing survey responses to coherent constructs or "factors"
 
@@ -159,8 +160,6 @@ ggplot(aes(x = age))+
 ### Variable: Gender
 
 ```{r, error = F, message = F, warning = F}
-
-
 
 ## Gender distribution by country
 lp02 <- ds %>% 
@@ -538,26 +537,33 @@ corrplot(mtx01,
                "darkgrey", "blue", "darkblue"))
 ```
 
+##  Bartlett's test of sphericity:
+
+- Examine if factor analysis is "appropriate"
+
+- This test tells you the probability that at least some of the items are correlated. 
+
+```{r, error = F, message = F, warning = F}
+cortest.bartlett(leadership)
+
+```
+
+- The test is statistically significant, suggesting that factor analysis is appropriate.
+
+
 ## Kaiser-Meyer-Olkin factor adequacy test
+
+- KMO statistic ranges from 0 to 1, and indicates "the degree to which each variable in a set is predicted without error by the other variables". 
+
+- Rule of thumb: overall MSO for the KMO test needs to be greater than 0.60 at least. Closer to 1 = better. 
 
 ```{r, error = F, message = F, warning = F}
 
 KMO(r=cor(leadership))
 
-## Examine if factor analysis is appropriate
-
-## The general criteria is that overall MSO for the KMO test needs to be greater than 0.60. 
-## Based on the results (overall MSA = 0.69), factor analysis is appropriate.
-
 ```
 
-##  Bartlett's test of sphericity:
-
-```{r, error = F, message = F, warning = F}
-cortest.bartlett(leadership)
-
-## The test is significant, again suggesting that factor analysis is appropriate.
-```
+- Based on the results (overall MSA = 0.69), factor analysis is appropriate.
 
 
 ## Parallel test
@@ -569,8 +575,8 @@ parallel <- fa.parallel(leadership)
 ```
 
 Based on the scree plot, factor analysis with two factors is the most appropriate. 
-We will proceed with promax rotation, which assumes that the items are inter-correlated 
-(that is, not independent from each other).
+
+We will proceed with promax rotation, which assumes that the items are inter-correlated (that is, not independent from each other).
 
 
 ## Two factor model:
@@ -645,23 +651,39 @@ Promote the interests of the communities and groups they belong to even at the e
 
 Call this factor: **"Barrier bound leadership"**
 
+## Interpreting EFA output:
+
 The promax rotated FA output suggests that there are two factors:
 
-Factor 1 = Barrier Crossing Leadeship (BCL)"
+- Factor 1 = Barrier Crossing Leadership (BCL). Made up of items 01, 02, 03
 
-Factor 2 = Barrier Bound Leadership (BBL)"
+- Factor 2 = Barrier Bound Leadership (BBL) Made up of items 04, 05, 06. 
 
 The two factors cumulatively explain 53% of the variance in the data. 
 
-Factor 1 explains 29% of the variance, Factor 2 explains 24%
+Factor 1 (BCL) explains 29% of the variance, Factor 2 (BBL) explains 24%
 
 
 # **Section 4. Confirmatory Factor Analysis**
 
-```{r, error = F, message = F, warning = F}
+- Why CFA? 
 
-# correlated two factor solution, marker method
-names(leadership)
+- EFA: "letting the data guide you" 
+
+- CFA: a priori theory based. 
+
+- We have expectations about the number of factors, how the factor structures should look like, etc. 
+
+- EFA: tells you how many factors to retain 
+
+- CFA: you already know how many factors to retain, so you test how close your data fits with expectations
+
+- CFA has its roots in Structural Equation Modeling, where we model "latent variables" 
+
+- In practice, they are rarely different quantitatively. 
+
+
+```{r, error = F, message = F, warning = F}
 
 ## Create two factor structure:
 twofacs <- 'BCL =~ leadership01+leadership02+leadership03
@@ -677,23 +699,101 @@ summary(cfa01,
         standardized = TRUE)
 ```
 
-# **Section 5. Reliability Analysis and Visualization**
+## Interpreting lavaan CFA output
+ 
+ - Model chi-square = 21.210, p < 0.05. 
+ 
+ - **Comparative Fit Index (CFI)** = 0.994.
+ - Fit statistic that ranges between 0 and 1.
+ - Takes into account Model chi-square. 
+ - In essence, you are comparing a "baseline" model with the model that you fit. 
+ - Rule of thumb: CFI > 0.9 indicates good fit. 
+ 
+ - **Tucker-Lewis Index (TLI)** = 0.990 
+ - Similar to CFI, but less sensitive to sample size. 
+ - Takes into account relative chi-square (normalized chi square).
+ - Rule of thumb: the closer to 1 means better. 
+ 
+ - **Root mean square error of approximation (RMSEA)**
+ - "Absolute" measure of fit. 
+ - Rule of thumb:
+ - RMSEA =< 0.05 indicates good fit. 
+ - RMSEA >= 0.10 indicates poor fit. 
+
+- Often the output can be messy, so we can take into account all the model fit statistics:
+
+- p value of Model chi-square < 0.05. 
+- CFI > 0.99
+- TLI = 0.99
+- RMSEA < 0.05
+
+All of this indicates that our model is a good fit. We can reasonably conclude there are two factors or dimensions on how people judge leadership qualities in this data. 
+
+# **Section 5. After Factor Analysis: Reliability Analysis and Visualization**
+
+- We have established a two factor structure. Both EFA and CFA results suggest the same thing. 
+
+- Now, we can examine the "reliability" or "internal validity" of the two constructs represented by the two factors.
+
+- Does it measure what it says it measures?
+
+- How well do the items go together? 
+
+- How closely related are the set of items as a group?
+
+- Different from "external validity" or "generalizability"
+
+## Compute internal validity of BCL:
 
 ```{r, error = F, message = F, warning = F}
 
-## Now, we can examine the "reliability" of each constructs represented by two factors:
 BCL <- cbind.data.frame(ds$leadership01, ds$leadership02, ds$leadership03)
 
 alph01 <- psych::alpha(BCL)
 alph01
 summary(alph01)
 
+```
+
+## Compute internal validity of BBL:
+
+```{r, error = F, message = F, warning = F}
+
 BBL <- cbind.data.frame(ds$leadership04, ds$leadership05, ds$leadership06)
 alph02 <- psych::alpha(BBL)
 alph02
 summary(alph02)
 
-## We can also visualize the two constructs and how they differ across countries:
+```
+
+## Interpretation of reliability analysis output
+
+- **Crohnbach's alpha:** 
+
+- Closer to 1 is better. Minimum of 0.70, ideally greater than 0.80. 
+
+- Sensitive to item numbers. More items means greater alpha. 
+
+- **Reliability if an item is dropped:**
+
+- How is the scale/construct affected if this item is dropped?
+
+- **Item statistics:**
+
+- Correlation between the item and the scale (item-total correlation)
+
+- raw.r = raw correlation 
+- r.drop = correlation with the scale after item is dropped
+- r.cor = correlation taking into account overlap between item and scale and reliability
+- ideally, item and scale should be correlated
+
+## Visualize BCL/BBL
+
+- We can also visualize the two constructs and how they differ across countries. 
+
+## Compute internal validity of BBL:
+
+```{r, error = F, message = F, warning = F}
 
 ## Create the actual construct, which is the average of three items:
 ds$BCL <- (ds$leadership01+ds$leadership02+ds$leadership03)/3
@@ -709,8 +809,11 @@ summary(ds$BBL)
 histfx01(ds, "BBL")
 histfx02(ds, "BBL")
 
-## We can also examine how BCL and BBL vary by country and gender
-## (or any other variable that we might be curious about)
+```
+
+-  We can also examine how BCL and BBL vary by country and gender (or any other variable that we might be curious about)
+
+```{r, error = F, message = F, warning = F}
 
 bp02 <- ds %>% drop_na(BCL, BBL, gender) %>% 
   ggplot(aes(y = BCL, 
@@ -762,6 +865,37 @@ geom_boxplot(fill = "grey")+
 
 bp05
 
-#### End of File ####
-
 ```
+
+# **Section 6. Conclusion **
+
+In this workshop, we used original survey data on attitudes towards group leadership across four countries and conducted:
+
+- Exploratory Data Analysis and Visualization
+
+- Exploratory Factor Analysis 
+
+- Confirmatory Factor Analysis
+
+- Reliability Analysis 
+
+- We can use the same general principles for other contexts where Factor Analysis (either EFA or CFA) can be used. 
+
+
+# **Section 7. Exercise**
+
+- This was a neat example where our factors lined up nicely. However, real world data can sometimes (often) be messy. 
+
+- Use the "exercise" dataset which contains attitudes of Americans towards different groups 
+
+- Conduct EFA 
+
+- Justify the number of factors 
+
+- Conduct CFA 
+
+- Conduct Reliability Analysis and Visualization 
+
+- Feel free to email me with questions/comments. 
+
+***End of File***

@@ -4,7 +4,11 @@
 ## Workshops for Ukraine
 ## February 1, 2024
 
-#### Section 1. Introduction to the workshop/data ####
+#### Section 1. Introduction ####
+
+## - See presentation html document
+
+#### Section 2. Introduction to the data/ EDA ####
 
 ## Clear R environment:
 rm(list=ls())
@@ -26,8 +30,6 @@ pacman::p_load(tidyverse, lavaan, vtable,
 
 ## Import the dataset that we will be using for the workshop:
 ds <- read_csv("data/fa_dataset.csv", show_col_types = F)
-
-#### Section 2. Exploratory Data Analysis & Visualization ####
 
 ## Briefly go over the dataset, variables, codebook, etc. 
 vtable(ds)
@@ -328,9 +330,7 @@ lollipop_chart(x = education,
 educationplot <- (educationgmb | educationpak) / (educationtza | educationuga) 
 educationplot + plot_annotation("Education by country")
 
-#### **Section 3. Substantive Measures of interest** ####
-
-#### Construct 1: Group leadership #### 
+#### **Section 3. Exploratory Factor Analysis** ####
 
 vtable(ds)
 
@@ -440,10 +440,6 @@ corrplot(mtx01,
          col=c("white", "darkred", "red",
                "darkgrey", "blue", "darkblue"))
 
-
-## Kaiser-Meyer-Olkin factor adequacy test
-KMO(r=cor(leadership))
-
 ## Examine if factor analysis is appropriate
 
 ## The general criteria is that overall MSO for the KMO test needs to be greater than 0.60. 
@@ -453,6 +449,10 @@ KMO(r=cor(leadership))
 cortest.bartlett(leadership)
 
 ## The test is significant, again suggesting that factor analysis is appropriate.
+
+
+## Kaiser-Meyer-Olkin factor adequacy test
+KMO(r=cor(leadership))
 
 ## Parallel test
 parallel <- fa.parallel(leadership)
@@ -537,7 +537,7 @@ text(
 # The two factors cumulatively explain 53% of the variance in the data. 
 # Factor 1 explains 29% of the variance, Factor 2 explains 24%
 
-#### Confirmatory Factor Analysis #### 
+#### Section 4. Confirmatory Factor Analysis #### 
 
 # correlated two factor solution, marker method
 names(leadership)
@@ -556,6 +556,7 @@ summary(cfa01,
         standardized = TRUE)
 
 
+### Section 5. Reliability Analysis / Visualization ####
 
 ## Now, we can examine the "reliability" of each constructs represented by two factors:
 BCL <- cbind.data.frame(ds$leadership01, ds$leadership02, ds$leadership03)
